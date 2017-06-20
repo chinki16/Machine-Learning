@@ -1,0 +1,121 @@
+---
+title: "Credit_Card"
+author: "Chinki"
+date: "June 15, 2017"
+output: word_document
+---
+source : https://www.kaggle.com/dalpozz/creditcardfraud
+```{r}
+library(readr)
+creditcard <- read_csv("C:/Computational Statistics/Kaggle/Credit card/creditcard.csv")
+creditcard$Class=as.factor(creditcard$Class)
+```
+```{r}
+#Structure of the data
+str(creditcard)
+```
+```{r}
+#Table of class 
+table(creditcard$Class)
+```
+```{r}
+#Praportion of fraud 
+prop.table(table(creditcard$Class))
+```
+
+```{r}
+set.seed(12)
+training=sample(284807,200000)
+credit_training=creditcard[training,]
+credit_test=creditcard[-training,]
+```
+
+
+Training a model on the data
+```{r}
+#C50 model
+library(C50)
+model=C5.0(credit_training[-31],credit_training$Class)
+model
+```
+```{r}
+summary(model)
+```
+```{r}
+pred=predict(model,credit_test)
+library(gmodels)
+CrossTable(pred,credit_test$Class)
+```
+```{r}
+model1=C5.0(credit_training[-31],credit_training$Class,trails=100)
+model1
+```
+```{r}
+summary(model1)
+```
+
+```{r}
+pred1=predict(model1,credit_test)
+CrossTable(pred1,credit_test$Class)
+```
+Logistic Regression model
+```{r}
+model2=glm(Class~. ,family = binomial(link = 'logit'),data = credit_training)
+model2
+```
+```{r}
+summary(model2)
+```
+```{r}
+anova(model2,test="Chisq")
+```
+```{r}
+pred=predict(model2,newdata = credit_test,type='response')
+pred=ifelse(pred>0.5,1,0)
+misclass=mean(pred!=credit_test$Class)
+print(paste('Accuracy',1-misclass))
+```
+```{r}
+library(ROCR)
+p=predict(model2,newdata = credit_test,type="response")
+pr=prediction(p,credit_test$Class)
+prf=performance(pr,measure = "tpr",x.measure = "fpr")
+plot(prf)
+```
+
+Regression Tree
+```{r}
+library(rpart)
+model3=rpart(Class~. ,data=credit_training)
+model3
+```
+```{r}
+summary(model3)
+```
+```{r}
+library(rpart.plot)
+rpart.plot(model3,digits = 2)
+```
+```{r}
+pred3=predict(model3,credit_test)
+```
+
+Random Forest
+
+```{r}
+sum(is.na(credit_training))
+credit_training=na.omit(credit_training)
+library(randomForest)
+set.seed(123)
+model4=randomForest(credit_training[-31],credit_training$Class ,data = credit_test,ntree = 25)
+model4
+```
+
+```{r}
+pred4=predict(model4,credit_test)
+CrossTable(pred4,credit_test$Class)
+```
+
+
+
+
